@@ -8,4 +8,4 @@ Ein Schulprojekt über Fraktale Geometrie. Hier lernst du wie fraktale Geometrie
 
 ---
 
-←→
+[![Open Website](assets/link.svg)](https://ilmartens10-gif.github.io/Fraktale-Geometrie/)
