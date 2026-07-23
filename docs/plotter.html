@@ -43,6 +43,7 @@ header h1{
   white-space:nowrap;
 }
 header h1 span{ color:var(--amber); }
+header h1 a{ color:inherit; text-decoration:none; }
 .tabs{ display:flex; gap:4px; margin-left:auto; }
 .tab-btn{
   font-family:'IBM Plex Mono',monospace;
@@ -52,8 +53,13 @@ header h1 span{ color:var(--amber); }
   padding:6px 12px; cursor:pointer;
 }
 .tab-btn.active{ color:var(--bg); background:var(--amber); border-color:var(--amber); }
-.panel-toggle{ display:none; }
-main{ flex:1; display:flex; min-height:0; }
+.panel-toggle{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:32px; height:32px; margin-left:8px; flex-shrink:0;
+  background:var(--panel-2); border:1px solid var(--line); border-radius:3px;
+  color:var(--text); cursor:pointer; font-size:15px;
+}
+main{ flex:1; display:flex; min-height:0; position:relative; }
 #canvas-wrap{ position:relative; flex:1; min-width:0; }
 canvas{ display:block; width:100%; height:100%; cursor:crosshair; touch-action:none; }
 #progress-bar{
@@ -68,9 +74,20 @@ canvas{ display:block; width:100%; height:100%; cursor:crosshair; touch-action:n
 }
 #hud b{ color:var(--cyan); font-weight:500; }
 aside#panel{
-  width:310px; flex-shrink:0; background:var(--panel);
-  border-left:1px solid var(--line); overflow-y:auto;
-  padding:16px; display:flex; flex-direction:column; gap:14px;
+  width:0; flex-shrink:0; background:var(--panel);
+  border-left:none; overflow:hidden;
+  padding:0; display:flex; flex-direction:column; gap:14px;
+  transition:width .2s ease;
+}
+#app.panel-open aside#panel{
+  width:310px; border-left:1px solid var(--line); overflow-y:auto; padding:16px;
+}
+.panel-head{ display:none; align-items:center; justify-content:space-between; }
+.panel-head-title{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
+.panel-close{
+  background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+  width:30px; height:30px; border-radius:3px; cursor:pointer; font-size:14px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
 .field{ display:flex; flex-direction:column; gap:5px; }
 .field label{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; }
@@ -83,6 +100,7 @@ select, input[type=text], input[type=number], textarea{
 }
 textarea{ resize:vertical; min-height:52px; }
 input[type=range]{ width:100%; accent-color:var(--amber); }
+input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--panel-2); border:1px solid var(--line); border-radius:3px; }
 .btn{
   font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.03em;
   background:var(--amber); color:#20140a; border:none; border-radius:3px;
@@ -103,16 +121,15 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
   aside#panel{
     position:absolute; right:0; top:0; bottom:0; z-index:20;
     width:86vw; max-width:340px;
+    padding:16px; overflow-y:auto; border-left:1px solid var(--line);
     transform:translateX(100%); transition:transform .2s ease;
     box-shadow:-8px 0 24px rgba(0,0,0,.45);
   }
-  aside#panel.open{ transform:translateX(0); }
-  .panel-toggle{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:34px; height:34px; margin-left:8px;
-    background:var(--panel-2); border:1px solid var(--line); border-radius:3px;
-    color:var(--text); cursor:pointer; font-size:15px;
+  #app.panel-open aside#panel{
+    width:86vw; max-width:340px;
+    transform:translateX(0);
   }
+  .panel-head{ display:flex; margin-bottom:2px; }
   header h1{ font-size:13px; }
   .tabs{ margin-left:auto; }
   .tab-btn{ padding:6px 8px; font-size:10px; }
@@ -122,7 +139,7 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
 <body>
 <div id="app">
   <header>
-    <h1>Fraktal<span>·</span>Plotter</h1>
+    <h1><a href="https://ilmartens10-gif.github.io/Fraktale-Geometrie/">Fraktal<span>·</span>Plotter</a></h1>
     <div class="tabs">
       <button class="tab-btn active" data-mode="escape" type="button">Formel-Fraktale</button>
       <button class="tab-btn" data-mode="geo" type="button">Geometrische Fraktale</button>
@@ -136,6 +153,11 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
       <div id="hud"></div>
     </div>
     <aside id="panel">
+      <div class="panel-head">
+        <span class="panel-head-title">Einstellungen</span>
+        <button class="panel-close" id="panelClose" type="button" aria-label="Menü schließen">✕</button>
+      </div>
+      <button class="btn secondary" id="downloadBtn" type="button">⬇ Bild herunterladen (.png)</button>
       <div id="escapeControls">
         <div class="section-title">Fraktal-Typ</div>
         <div class="field">
@@ -182,7 +204,15 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
             <option value="fire">Plotter-Amber</option>
             <option value="ocean">Ozean</option>
             <option value="mono">Graustufen</option>
+            <option value="custom">Eigene Farben …</option>
           </select>
+        </div>
+        <div class="field" id="customPaletteFields" hidden>
+          <div class="row">
+            <div class="field"><label>Außen</label><input type="color" id="colorOuter" value="#0b0d10"></div>
+            <div class="field"><label>Innen</label><input type="color" id="colorInner" value="#000000"></div>
+            <div class="field"><label>Rahmen</label><input type="color" id="colorRim" value="#ffab4a"></div>
+          </div>
         </div>
 
         <button class="btn" id="renderEscapeBtn" type="button">Zeichnen</button>
@@ -273,7 +303,7 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
     function f(n){ return l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); }
     return [Math.round(255*f(0)),Math.round(255*f(8)),Math.round(255*f(4))];
   }
-  function palette(t, scheme){
+  function palette(t, scheme, custom){
     t = Math.max(0,Math.min(1,t));
     if (scheme==='classic') return hslToRgb(200+t*306,0.75,0.52);
     if (scheme==='fire'){
@@ -281,8 +311,22 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
       var t2=(t-0.5)*2; return [255, Math.round(120+135*t2), Math.round(255*t2)];
     }
     if (scheme==='ocean'){ return [Math.round(8+18*t), Math.round(35+120*t), Math.round(75+175*t)]; }
+    if (scheme==='custom' && custom){
+      return [
+        Math.round(custom.outer[0]+(custom.rim[0]-custom.outer[0])*t),
+        Math.round(custom.outer[1]+(custom.rim[1]-custom.outer[1])*t),
+        Math.round(custom.outer[2]+(custom.rim[2]-custom.outer[2])*t)
+      ];
+    }
     var v = Math.round(255*t);
     return [v, Math.round(v*0.78), Math.round(v*0.5)];
+  }
+  function hexToRgb(hex){
+    hex = String(hex||'#000000').replace('#','');
+    if (hex.length===3){ hex = hex.split('').map(function(c){ return c+c; }).join(''); }
+    var num = parseInt(hex,16);
+    if (isNaN(num)) num = 0;
+    return [(num>>16)&255, (num>>8)&255, num&255];
   }
 
   // ---------- DOM ----------
@@ -306,6 +350,16 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
   var maxIterInput = document.getElementById('maxIter');
   var maxIterVal = document.getElementById('maxIterVal');
   var paletteSelect = document.getElementById('paletteSelect');
+  var customPaletteFields = document.getElementById('customPaletteFields');
+  var colorOuterInput = document.getElementById('colorOuter');
+  var colorInnerInput = document.getElementById('colorInner');
+  var colorRimInput = document.getElementById('colorRim');
+
+  var appEl = document.getElementById('app');
+  var panelToggleBtn = document.getElementById('panelToggle');
+  var panelCloseBtn = document.getElementById('panelClose');
+  var panelEl = document.getElementById('panel');
+  var downloadBtn = document.getElementById('downloadBtn');
 
   var geoPresetEl = document.getElementById('geoPreset');
   var geoPresetDesc = document.getElementById('geoPresetDesc');
@@ -323,6 +377,8 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
   var escapeView = {xmin:-2, xmax:1, ymin:-1.3, ymax:1.3};
   var escapeRenderToken = 0;
   var escapeRenderQueued = false;
+  var lastHudLines = [];
+  var panelOpen = window.innerWidth > 820;
 
   var geoView = {scale:1, offsetX:0, offsetY:0};
   var geoBaseScale = 1;
@@ -372,26 +428,46 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
     canvas.height = Math.max(1, Math.round(rect.height*dpr));
   }
 
-  function updateHud(extra){
-    extra = extra || {};
+  function supExp(n){
+    var map = {2:'\u00B2',3:'\u00B3',4:'\u2074',5:'\u2075',6:'\u2076',7:'\u2077',8:'\u2078',9:'\u2079'};
+    if (Number.isInteger(n) && map[n]) return map[n];
+    return '^' + n;
+  }
+
+  function getFormulaLabel(){
+    var preset = escapePresetEl.value;
+    var base;
+    if (preset==='mandelbrot') base = 'z\u00B2 + c';
+    else if (preset==='multibrot') base = 'z' + supExp(parseFloat(exponentInput.value)||2) + ' + c';
+    else if (preset==='burningship') base = '(|Re z| + i|Im z|)\u00B2 + c';
+    else base = (customFormulaInput.value.trim() || 'z*z + c');
+    if (juliaToggle.checked){
+      var jre = parseFloat(juliaReInput.value)||0, jim = parseFloat(juliaImInput.value)||0;
+      base += '  [Julia, c=' + jre.toFixed(4) + (jim>=0?'+':'') + jim.toFixed(4) + 'i]';
+    }
+    return base;
+  }
+
+  function updateHud(){
+    var lines = [];
     if (currentMode==='escape'){
       var w = escapeView.xmax-escapeView.xmin;
       var re = (escapeView.xmin+escapeView.xmax)/2;
       var im = (escapeView.ymin+escapeView.ymax)/2;
-      var progress = extra.progress===undefined ? 1 : extra.progress;
-      hud.innerHTML = 'Modus: <b>Formel-Fraktal</b><br>' +
-        'Zentrum: ' + re.toFixed(6) + (im>=0?'+':'') + im.toFixed(6) + 'i<br>' +
-        'Sichtbreite: ' + w.toExponential(3) + '<br>' +
-        'Fortschritt: ' + Math.round(progress*100) + '%';
-      progressBar.style.width = (progress*100)+'%';
+      lines.push('Formel-Fraktal');
+      lines.push('Formel: ' + getFormulaLabel());
+      lines.push('Zentrum: ' + re.toFixed(6) + (im>=0?'+':'') + im.toFixed(6) + 'i');
+      lines.push('Sichtbreite: ' + w.toExponential(3));
     } else {
       var pct = geoSegments.length ? Math.round(100*geoRevealCount/geoSegments.length) : 0;
-      hud.innerHTML = 'Modus: <b>Geometrisches Fraktal</b><br>' +
-        'Segmente: ' + geoSegments.length + '<br>' +
-        'Zoom: ' + geoView.scale.toFixed(2) + '×<br>' +
-        'Gezeichnet: ' + pct + '%';
+      lines.push('Geometrisches Fraktal');
+      lines.push('Segmente: ' + geoSegments.length);
+      lines.push('Zoom: ' + geoView.scale.toFixed(2) + '\u00D7');
+      lines.push('Gezeichnet: ' + pct + '%');
       progressBar.style.width = pct+'%';
     }
+    lastHudLines = lines;
+    hud.innerHTML = lines.map(function(l,i){ return i===0 ? '<b>'+l+'</b>' : l; }).join('<br>');
   }
 
   // ---------- Escape-time formula ----------
@@ -430,6 +506,15 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
     var jc = new Complex(parseFloat(juliaReInput.value)||0, parseFloat(juliaImInput.value)||0);
     var nExp = parseFloat(exponentInput.value)||2;
     var fn = getEscapeFormulaFn();
+    var customColors = null;
+    if (scheme==='custom'){
+      customColors = {
+        outer: hexToRgb(colorOuterInput.value),
+        inner: hexToRgb(colorInnerInput.value),
+        rim: hexToRgb(colorRimInput.value)
+      };
+    }
+    updateHud();
     var row=0, col=0;
 
     function step(){
@@ -447,19 +532,19 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
           z = fn(Complex, z, c, nExp, Math);
         }
         var idx = (row*w+col)*4;
-        if (!bail){ data[idx]=6; data[idx+1]=8; data[idx+2]=12; data[idx+3]=255; }
-        else {
+        if (!bail){
+          if (customColors){ data[idx]=customColors.inner[0]; data[idx+1]=customColors.inner[1]; data[idx+2]=customColors.inner[2]; data[idx+3]=255; }
+          else { data[idx]=6; data[idx+1]=8; data[idx+2]=12; data[idx+3]=255; }
+        } else {
           var t = iter/maxIter;
-          var rgb = palette(t, scheme);
+          var rgb = palette(t, scheme, customColors);
           data[idx]=rgb[0]; data[idx+1]=rgb[1]; data[idx+2]=rgb[2]; data[idx+3]=255;
         }
         col++;
         if (col>=w){ col=0; row++; if(row>=h) break; }
       }
       ctx.putImageData(img,0,0);
-      updateHud({progress: row/h});
       if (row<h){ requestAnimationFrame(step); }
-      else { updateHud({progress:1}); }
     }
     requestAnimationFrame(step);
   }
@@ -638,6 +723,59 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
     geoView.offsetY += dyPix;
   }
 
+  // ---------- PNG export ----------
+  function downloadPNG(){
+    var exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+    var ectx = exportCanvas.getContext('2d');
+    ectx.drawImage(canvas, 0, 0);
+
+    var rect = canvas.getBoundingClientRect();
+    var dpr = rect.width>0 ? canvas.width/rect.width : (window.devicePixelRatio||2);
+    if (!isFinite(dpr) || dpr<=0) dpr = 2;
+
+    var urlText = 'https://ilmartens10-gif.github.io/Fraktale-Geometrie/';
+    var pad = 10*dpr;
+    var lineH = 16*dpr;
+    var fontMain = Math.round(12*dpr) + 'px "IBM Plex Mono", monospace';
+    var fontUrl = Math.round(10*dpr) + 'px "IBM Plex Mono", monospace';
+
+    ectx.font = fontMain;
+    var maxW = 0;
+    lastHudLines.forEach(function(l){ maxW = Math.max(maxW, ectx.measureText(l).width); });
+    ectx.font = fontUrl;
+    maxW = Math.max(maxW, ectx.measureText(urlText).width);
+
+    var boxW = maxW + pad*2;
+    var boxH = lastHudLines.length*lineH + lineH*0.9 + pad*1.6;
+    var boxX = 12*dpr, boxY = exportCanvas.height - boxH - 12*dpr;
+
+    ectx.fillStyle = 'rgba(11,13,16,0.78)';
+    ectx.fillRect(boxX, boxY, boxW, boxH);
+    ectx.strokeStyle = 'rgba(38,43,51,0.9)';
+    ectx.lineWidth = Math.max(1,dpr);
+    ectx.strokeRect(boxX, boxY, boxW, boxH);
+
+    ectx.font = fontMain;
+    ectx.fillStyle = '#e7e9ec';
+    ectx.textBaseline = 'alphabetic';
+    lastHudLines.forEach(function(l,i){
+      ectx.fillText(l, boxX+pad, boxY+pad*0.9 + (i+1)*lineH - lineH*0.3);
+    });
+    ectx.font = fontUrl;
+    ectx.fillStyle = '#818894';
+    ectx.fillText(urlText, boxX+pad, boxY+boxH-pad*0.6);
+
+    var a = document.createElement('a');
+    var ts = new Date().toISOString().replace(/[:.]/g,'-');
+    a.download = 'fraktal-' + ts + '.png';
+    a.href = exportCanvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   // ---------- Resize ----------
   function handleResize(){
     sizeCanvas();
@@ -727,6 +865,7 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
       currentMode = btn.dataset.mode;
       escapeControls.hidden = currentMode!=='escape';
       geoControls.hidden = currentMode!=='geo';
+      progressBar.style.display = currentMode==='geo' ? '' : 'none';
       ctx.clearRect(0,0,canvas.width,canvas.height);
       if (currentMode==='escape'){ renderEscape(); }
       else { if (geoSegments.length===0){ regenerateGeo(); } else { redrawGeoNow(); } }
@@ -734,8 +873,21 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
     });
   });
 
-  document.getElementById('panelToggle').addEventListener('click', function(){
-    document.getElementById('panel').classList.toggle('open');
+  function applyPanelState(){
+    appEl.classList.toggle('panel-open', panelOpen);
+    panelToggleBtn.textContent = panelOpen ? '\u2715' : '\u2630';
+    panelToggleBtn.setAttribute('aria-label', panelOpen ? 'Menü schließen' : 'Menü öffnen');
+  }
+  panelToggleBtn.addEventListener('click', function(){
+    panelOpen = !panelOpen;
+    applyPanelState();
+  });
+  panelCloseBtn.addEventListener('click', function(){
+    panelOpen = false;
+    applyPanelState();
+  });
+  panelEl.addEventListener('transitionend', function(e){
+    if (e.propertyName==='width' || e.propertyName==='transform'){ handleResize(); }
   });
 
   escapePresetEl.addEventListener('change', function(){
@@ -747,6 +899,18 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
     juliaFields.hidden = !juliaToggle.checked;
   });
   maxIterInput.addEventListener('input', function(){ maxIterVal.textContent = maxIterInput.value; });
+
+  paletteSelect.addEventListener('change', function(){
+    customPaletteFields.hidden = (paletteSelect.value!=='custom');
+    if (currentMode==='escape'){ queueEscapeRender(); }
+  });
+  [colorOuterInput, colorInnerInput, colorRimInput].forEach(function(inp){
+    inp.addEventListener('input', function(){
+      if (currentMode==='escape'){ queueEscapeRender(); }
+    });
+  });
+
+  downloadBtn.addEventListener('click', downloadPNG);
 
   document.getElementById('renderEscapeBtn').addEventListener('click', renderEscape);
   document.getElementById('resetEscapeBtn').addEventListener('click', function(){
@@ -777,6 +941,8 @@ input[type=range]{ width:100%; accent-color:var(--amber); }
   });
 
   // ---------- Init ----------
+  progressBar.style.display = 'none';
+  applyPanelState();
   geoPresetEl.dispatchEvent(new Event('change'));
   sizeCanvas();
   escapeView = fitAspect(escapeView);
