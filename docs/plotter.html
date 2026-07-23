@@ -110,6 +110,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
 .btn:active{ transform:translateY(1px); }
 .section-title{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--cyan); font-family:'IBM Plex Mono',monospace; border-top:1px solid var(--line); padding-top:12px; margin-top:2px;}
 .section-title:first-child{ border-top:none; padding-top:0; margin-top:0; }
+.divider{ border-top:1px solid var(--line); margin:2px 0 0; height:0; }
 .hint{ font-size:11px; color:var(--text-dim); line-height:1.55; }
 .checkbox-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim); }
 .checkbox-row input{ accent-color:var(--cyan); }
@@ -215,6 +216,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
           </div>
         </div>
 
+        <div class="divider"></div>
         <button class="btn" id="renderEscapeBtn" type="button">Zeichnen</button>
         <button class="btn secondary" id="resetEscapeBtn" type="button">Ansicht zurücksetzen</button>
         <div class="hint">Mausrad = zoomen · Ziehen = verschieben · Doppelklick = reinzoomen · am Handy: Pinch zum Zoomen</div>
@@ -493,7 +495,9 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
     }
   }
 
-  function renderEscape(){
+  function renderEscape(progressive){
+    if (progressive === undefined) progressive = true;
+    geoRenderToken++; // laufendes geometrisches Fraktal-Rendering abbrechen
     var token = ++escapeRenderToken;
     var w = canvas.width, h = canvas.height;
     if (w<=1 || h<=1) return;
@@ -543,7 +547,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
         col++;
         if (col>=w){ col=0; row++; if(row>=h) break; }
       }
-      ctx.putImageData(img,0,0);
+      if (progressive || row>=h){ ctx.putImageData(img,0,0); }
       if (row<h){ requestAnimationFrame(step); }
     }
     requestAnimationFrame(step);
@@ -552,7 +556,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
   function queueEscapeRender(){
     if (escapeRenderQueued) return;
     escapeRenderQueued = true;
-    requestAnimationFrame(function(){ escapeRenderQueued=false; renderEscape(); });
+    requestAnimationFrame(function(){ escapeRenderQueued=false; renderEscape(false); });
   }
 
   function screenToEscape(px,py){
@@ -689,6 +693,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
   }
 
   function startGeoReveal(){
+    escapeRenderToken++; // laufendes Formel-Fraktal-Rendering abbrechen
     var token = ++geoRenderToken;
     geoRevealCount = 0;
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -767,13 +772,51 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
     ectx.fillStyle = '#818894';
     ectx.fillText(urlText, boxX+pad, boxY+boxH-pad*0.6);
 
-    var a = document.createElement('a');
     var ts = new Date().toISOString().replace(/[:.]/g,'-');
-    a.download = 'fraktal-' + ts + '.png';
-    a.href = exportCanvas.toDataURL('image/png');
+    var filename = 'fraktal-' + ts + '.png';
+
+    // toDataURL + synchrones Base64-Decoding (statt async toBlob), damit die
+    // "User-Aktivierung" des Klicks für navigator.share() erhalten bleibt —
+    // iOS verweigert den Share-Dialog sonst, wenn er aus einem asynchronen
+    // Callback heraus aufgerufen wird.
+    var dataUrl = exportCanvas.toDataURL('image/png');
+    var blob = dataURLtoBlob(dataUrl);
+
+    // iOS/iPadOS: <a download> wird von Safari bei data:/blob:-URLs nicht
+    // zuverlässig als echter Download behandelt (es erscheint nur eine
+    // Vorschau/Nachfrage, ohne dass die Datei gespeichert wird). Dort über
+    // die native Teilen-Funktion gehen — die bietet "Bild sichern" an.
+    if (navigator.canShare){
+      try {
+        var file = new File([blob], filename, {type:'image/png'});
+        if (navigator.canShare({files:[file]})){
+          navigator.share({files:[file], title:filename}).catch(function(){});
+          return;
+        }
+      } catch(e){ /* File/Share nicht unterstützt -> Fallback unten */ }
+    }
+
+    // Desktop (Mac/PC) & Android: klassischer Download über Blob-URL
+    // (robuster als eine sehr lange data:-URL im href-Attribut).
+    var blobUrl = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.download = filename;
+    a.href = blobUrl;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 2000);
+  }
+
+  function dataURLtoBlob(dataurl){
+    var parts = dataurl.split(',');
+    var mimeMatch = parts[0].match(/:(.*?);/);
+    var mime = mimeMatch ? mimeMatch[1] : 'image/png';
+    var bstr = atob(parts[1]);
+    var n = bstr.length;
+    var u8arr = new Uint8Array(n);
+    while (n--){ u8arr[n] = bstr.charCodeAt(n); }
+    return new Blob([u8arr], {type:mime});
   }
 
   // ---------- Resize ----------
@@ -866,6 +909,9 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       escapeControls.hidden = currentMode!=='escape';
       geoControls.hidden = currentMode!=='geo';
       progressBar.style.display = currentMode==='geo' ? '' : 'none';
+      // Laufendes Zeichnen des jeweils anderen Modus abbrechen, damit es nicht
+      // im Hintergrund weiterläuft und über das neu gezeichnete Fraktal malt.
+      if (currentMode==='geo'){ escapeRenderToken++; } else { geoRenderToken++; }
       ctx.clearRect(0,0,canvas.width,canvas.height);
       if (currentMode==='escape'){ renderEscape(); }
       else { if (geoSegments.length===0){ regenerateGeo(); } else { redrawGeoNow(); } }
