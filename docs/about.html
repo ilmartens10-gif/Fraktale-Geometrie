@@ -19,31 +19,20 @@
       background: radial-gradient(1200px 800px at 10% -10%, #1a2040 0%, var(--bg) 60%), var(--bg);
       color: var(--text); line-height:1.65;
     }
-    .topbar {
-height: 52px;
-display: flex;
-align-items: center;
-gap: 10px;
-padding: 0 20px;
-background: rgba(28,28,30,.88);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border-bottom: 1px solid var(--border);
-flex-shrink: 0;
-}
-.topbar-logo {
-width: 26px; height: 26px;
-background: var(--accent);
-border-radius: 7px;
-display: grid; place-items: center;
-flex-shrink: 0;
-}
-.topbar-logo svg { width: 14px; height: 14px; fill: #fff; }
-.topbar h1 {
-font-size: 15px;
-font-weight: 600;
-letter-spacing: -.2px;
-}
+    header{
+      padding: 3rem 1rem 2rem; text-align:center; position:relative; overflow:hidden;
+    }
+    header h1{
+      margin:0; font-size: clamp(2rem, 4vw, 3rem); letter-spacing:0.5px;
+    }
+    header p{color: var(--muted); margin: .5rem auto 0; max-width: 55ch}
+    .container{max-width: 960px; margin: 0 auto; padding: 0 1rem 4rem}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 60%), var(--panel);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 1.25rem 1.25rem; margin: 1rem 0;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    }
     h2{ margin: 0.25rem 0 0.75rem; font-size: clamp(1.25rem, 2.6vw, 1.65rem) }
     p{ margin: 0.5rem 0 1rem }
     ul{ margin: 0.25rem 0 1rem 1.25rem }
