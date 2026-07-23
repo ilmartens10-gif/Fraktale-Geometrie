@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Über Fraktale – Fraktale Geometrie</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root{
+  --bg:#000000;
+  --card-bg:rgba(28,28,30,.6);
+  --card-border:rgba(255,255,255,.12);
+  --text-main:#f5f5f7;
+  --text-muted:#86868b;
+  --accent-blue:#0A84FF;
+  --accent-cyan:#64D2FF;
+  --accent-purple:#BF5AF2;
+  --accent-gold:#FFD60A;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",sans-serif;
+  background:var(--bg); color:var(--text-main);
+  min-height:100vh; overflow-x:hidden;
+}
+
+/* ─── Ambient glows ─── */
+.ambient-glow-1{
+  position:fixed; top:-180px; left:15%;
+  width:650px; height:500px;
+  background:radial-gradient(circle, rgba(191,90,242,.18) 0%, rgba(0,0,0,0) 70%);
+  pointer-events:none; z-index:0;
+}
+.ambient-glow-2{
+  position:fixed; bottom:-220px; right:-120px;
+  width:650px; height:650px;
+  background:radial-gradient(circle, rgba(10,132,255,.16) 0%, rgba(0,0,0,0) 70%);
+  pointer-events:none; z-index:0;
+}
+
+/* ─── Shared site header (identisch auf allen Seiten) ─── */
+.site-header{
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:14px 24px;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.brand{ display:flex; align-items:center; gap:10px; text-decoration:none; color:#fff; min-width:0; }
+.brand-mark{
+  width:30px; height:30px; border-radius:8px; flex-shrink:0;
+  display:grid; place-items:center;
+  background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));
+  box-shadow:0 0 14px rgba(100,210,255,.3);
+}
+.brand-mark svg{ width:15px; height:15px; fill:#fff; }
+.brand-name{ font-size:16px; font-weight:700; letter-spacing:-.02em; white-space:nowrap; }
+.site-nav{ display:flex; align-items:center; gap:4px; }
+.site-nav-link{
+  padding:7px 14px; border-radius:980px;
+  font-size:13px; font-weight:500;
+  color:var(--text-muted); text-decoration:none; white-space:nowrap;
+  transition:background .15s,color .15s;
+}
+.site-nav-link:hover{ color:#fff; background:rgba(255,255,255,.08); }
+.site-nav-link.active{ color:#fff; background:rgba(255,255,255,.12); border:1px solid var(--card-border); }
+@media (max-width:560px){
+  .brand-name{ display:none; }
+  .site-nav-link{ padding:6px 10px; font-size:11.5px; }
+}
+
+/* ─── Page content ─── */
+main{ position:relative; z-index:1; max-width:920px; margin:0 auto; padding:56px 24px 80px; }
+
+.page-tag{
+  font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em;
+  color:var(--accent-cyan); margin-bottom:12px;
+}
+h1{ font-size:44px; font-weight:800; letter-spacing:-.03em; line-height:1.08; margin-bottom:16px; }
+.gradient-text{
+  background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.lede{ font-size:18px; color:var(--text-muted); max-width:64ch; line-height:1.6; margin-bottom:48px; }
+
+section{ margin-bottom:20px; }
+.card{
+  background:var(--card-bg);
+  backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px);
+  border:1px solid var(--card-border);
+  border-radius:20px;
+  padding:32px;
+}
+h2{ font-size:24px; font-weight:700; margin-bottom:14px; letter-spacing:-.01em; }
+p{ margin:0 0 14px; line-height:1.65; color:#d8d8dc; }
+p:last-child{ margin-bottom:0; }
+p em{ color:var(--text-main); font-style:normal; font-weight:600; }
+ul{ margin:0 0 4px 20px; }
+li{ margin:6px 0; line-height:1.6; color:#d8d8dc; }
+li strong{ color:var(--text-main); }
+code{
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.1);
+  padding:.1rem .4rem; border-radius:6px; font-size:.92em;
+}
+.note{ color:var(--text-muted); font-size:14px; margin-top:18px; }
+
+.example-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:18px; margin-top:8px;
+}
+.example{
+  border-left:2px solid var(--accent-cyan);
+  padding-left:16px;
+}
+.example h3{ font-size:17px; font-weight:700; margin-bottom:6px; }
+.example p{ font-size:14.5px; color:var(--text-muted); margin-bottom:8px; }
+.tag{
+  display:inline-block; font-size:12px; color:var(--accent-cyan);
+  background:rgba(100,210,255,.1); border:1px solid rgba(100,210,255,.25);
+  padding:3px 10px; border-radius:980px;
+}
+
+.bar{ height:3px; width:100%; border-radius:999px; margin:36px 0; opacity:.85;
+  background:linear-gradient(90deg,var(--accent-cyan),var(--accent-purple)); }
+
+footer{
+  border-top:1px solid rgba(255,255,255,.08);
+  padding:28px; text-align:center; color:var(--text-muted); font-size:13px;
+  position:relative; z-index:1;
+}
+</style>
+</head>
+<body>
+
+<div class="ambient-glow-1"></div>
+<div class="ambient-glow-2"></div>
+
+<header class="site-header">
+  <a href="index.html" class="brand">
+    <span class="brand-mark">
+      <svg viewBox="0 0 16 16" fill-rule="evenodd"><path d="M8 2 L14 13.5 L2 13.5 Z M5 7.75 L11 7.75 L8 13.5 Z"/></svg>
+    </span>
+    <span class="brand-name">Fraktale Geometrie</span>
+  </a>
+  <nav class="site-nav">
+    <a href="index.html" class="site-nav-link">Start</a>
+    <a href="plotter.html" class="site-nav-link">Plotter</a>
+    <a href="about.html" class="site-nav-link active">Über Fraktale</a>
+    <a href="https://github.com/ilmartens10-gif/Fraktale-Geometrie" target="_blank" rel="noreferrer noopener" class="site-nav-link">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <div class="page-tag">Hintergrundwissen</div>
+  <h1>Was ist ein <span class="gradient-text">Fraktal?</span></h1>
+  <p class="lede">Selbstähnlichkeit, unendliche Details und einfache Regeln, aus denen komplexe Strukturen entstehen — ein kurzer Überblick über fraktale Geometrie.</p>
+
+  <section class="card" id="einfuehrung">
+    <h2>Einführung</h2>
+    <p>Die fraktale Geometrie untersucht Formen, die ihre Struktur auf verschiedenen Maßstabsebenen wiederholen. Im Gegensatz zu klassischen euklidischen Figuren wie Kreis oder Dreieck haben Fraktale oft eine nicht ganzzahlige (gebrochene) Dimension und zeigen <em>Selbstähnlichkeit</em>: Zoomt man hinein, findet man immer wieder Formen, die an das Ganze erinnern.</p>
+    <p>Viele Phänomene der Natur lassen sich mit fraktalen Konzepten beschreiben — von Küstenlinien über Wolken bis zu Pflanzen und Turbulenzen. Einfache iterative Regeln, also das wiederholte Anwenden einer Transformation, erzeugen die verschlungenen Muster, die wir Fraktale nennen.</p>
+    <ul>
+      <li><strong>Selbstähnlichkeit:</strong> Teile ähneln dem Ganzen.</li>
+      <li><strong>Iteration:</strong> eine Regel wird immer wieder angewendet.</li>
+      <li><strong>Fraktale Dimension:</strong> ein Maß zwischen den klassischen topologischen Dimensionen; die Koch-Kurve hat z. B. eine Dimension von ≈ 1,26.</li>
+    </ul>
+    <p class="note">Tipp: Betrachte diese Seite bei verschiedenen Fensterbreiten — das Layout passt sich an, ganz so wie fraktale Details auf verschiedenen Maßstabsebenen sichtbar werden.</p>
+  </section>
+
+  <div class="bar"></div>
+
+  <section class="card" id="beispiele">
+    <h2>Beispiele</h2>
+    <div class="example-grid">
+      <div class="example">
+        <h3>Koch-Schneeflocke</h3>
+        <p>Man beginnt mit einem gleichseitigen Dreieck. Bei jeder Seite wird das mittlere Drittel durch zwei Seiten eines kleineren gleichseitigen Dreiecks ersetzt — und das wird wiederholt. Der Umfang wächst dabei unbegrenzt, die Fläche nähert sich einem endlichen Wert.</p>
+        <span class="tag">Regel: mittleres Drittel → „Zacke"</span>
+      </div>
+      <div class="example">
+        <h3>Sierpinski-Dreieck</h3>
+        <p>Ausgehend von einem gefüllten Dreieck wird es in vier kleinere, kongruente Dreiecke unterteilt, das mittlere entfernt und der Vorgang mit jedem verbleibenden Dreieck wiederholt. Das Ergebnis hat die Fläche null, aber unendlich viele Löcher.</p>
+        <span class="tag">3 Kopien, Faktor 1/2</span>
+      </div>
+      <div class="example">
+        <h3>Mandelbrot-Menge</h3>
+        <p>Die Menge aller komplexen Zahlen c, für die die Iteration <code>z ← z² + c</code> (Start bei z = 0) nicht divergiert. Ihr Rand zeigt eine endlos reiche, selbstähnliche Struktur.</p>
+        <span class="tag">Komplexe Dynamik</span>
+      </div>
+      <div class="example">
+        <h3>Natürliche Muster</h3>
+        <p>Küstenlinien, Farnblätter, Romanesco-Brokkoli und Flussnetze zeigen oft fraktalähnliche Statistiken. Diese zufällige, <em>statistische</em> Selbstähnlichkeit tritt über mehrere Maßstabsebenen hinweg auf.</p>
+        <span class="tag">Näherung, kein exaktes Fraktal</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="bar"></div>
+
+  <section class="card" id="fazit">
+    <h2>Fazit</h2>
+    <p>Fraktale zeigen, wie aus einfachen Regeln Komplexität entstehen kann. Ob in der reinen Mathematik oder in Modellen der Natur — sie helfen dabei, Rauheit, Verzweigung und Wachstum über Maßstabsebenen hinweg zu beschreiben. Sich mit Fraktalen zu beschäftigen heißt, genauer hinzuschauen — und dann noch genauer.</p>
+    <p>Neugierig geworden? Probiere unseren <a href="plotter.html" style="color:var(--accent-cyan)">Fraktal-Plotter</a> an.</p>
+  </section>
+</main>
+
+<footer>
+  <p>© 2026 ilmartens10-gif &amp; KingDando8430</p>
+</footer>
+
+</body>
+</html>
