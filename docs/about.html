@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fraktale Geometrie</title>
+  <style>
+    :root{
+      --bg:#0f1221;
+      --panel:#161a2e;
+      --text:#e7ecff;
+      --muted:#aab3d6;
+      --accent:#7ad1ff;
+      --accent2:#b18cff;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, #1a2040 0%, var(--bg) 60%), var(--bg);
+      color: var(--text); line-height:1.65;
+    }
+    header{
+      padding: 3rem 1rem 2rem; text-align:center; position:relative; overflow:hidden;
+    }
+    header h1{
+      margin:0; font-size: clamp(2rem, 4vw, 3rem); letter-spacing:0.5px;
+    }
+    header p{color: var(--muted); margin: .5rem auto 0; max-width: 55ch}
+    .container{max-width: 960px; margin: 0 auto; padding: 0 1rem 4rem}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 60%), var(--panel);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 1.25rem 1.25rem; margin: 1rem 0;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    }
+    h2{ margin: 0.25rem 0 0.75rem; font-size: clamp(1.25rem, 2.6vw, 1.65rem) }
+    p{ margin: 0.5rem 0 1rem }
+    ul{ margin: 0.25rem 0 1rem 1.25rem }
+    li{ margin: 0.25rem 0 }
+    code, .tag{ background: rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); padding: .1rem .35rem; border-radius: 6px }
+    a{ color: var(--accent) }
+
+    /* simple decorative gradient bar */
+    .bar{height:4px; width:100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius:999px; opacity:0.9}
+
+    footer{ color: var(--muted); text-align:center; padding: 2rem 1rem; font-size: .95rem }
+    .grid{
+      display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 1rem;
+    }
+    .example{
+      border-left: 3px solid var(--accent); padding-left: .75rem;
+    }
+    .note{ color: var(--muted); font-size:.95rem }
+  .topbar{height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;background:rgba(28,28,30,.88);border-bottom:1px solid rgba(255,255,255,.08)}.topbar-logo{width:26px;height:26px;background:#0a84ff;border-radius:7px;display:grid;place-items:center}</style>
+</head>
+<body><div class="topbar"><div class="topbar-logo"><svg viewBox="0 0 16 16"><path fill="white" d="M8 2 L14 13.5 L2 13.5 Z M5 7.75 L11 7.75 L8 13.5 Z"/></svg></div><h1>Fraktale Geometrie</h1></div>
+  <header>
+    <h1>Fraktale Geometrie</h1>
+    <p>Self-similarity, infinite detail, and simple rules that generate complex structures — a quick tour of fractals on a single page.</p>
+  </header>
+
+  <div class="container">
+    <div class="bar"></div>
+
+    <section class="card" id="introduction">
+      <h2>Einführung</h2>
+      <p>Fractal geometry studies shapes that repeat their structure at different scales. Unlike classical Euclidean figures, fractals often have non-integer (fractional) dimensions and display <em>self-similarity</em>: zoom in and you keep finding shapes reminiscent of the whole.</p>
+      <p>Many natural phenomena can be described with fractal ideas, from coastlines and clouds to plants and turbulence. Simple iterative rules — repeatedly applying a transformation — can produce the intricate patterns we call fractals.</p>
+      <ul>
+        <li><strong>Self-similarity:</strong> parts resemble the whole.</li>
+        <li><strong>Iteration:</strong> applying a rule many times.</li>
+        <li><strong>Fractal dimension:</strong> a measure between topological dimensions; e.g., the Koch curve has dimension ≈ 1.26.</li>
+      </ul>
+      <p class="note">Tip: Try viewing this page at different widths — the layout adapts, just like fractal details emerge at different scales.</p>
+    </section>
+
+    <section class="card" id="examples">
+      <h2>Beispiele</h2>
+      <div class="grid">
+        <div class="example">
+          <h3>Koch Snowflake</h3>
+          <p>Start with an equilateral triangle. For each side, replace its middle third with two sides of a smaller equilateral triangle, and repeat. Perimeter grows without bound; area approaches a finite limit.</p>
+          <p><span class="tag">Iterative rule</span> replace middle third with a "bump"</p>
+        </div>
+        <div class="example">
+          <h3>Sierpiński Triangle</h3>
+          <p>Begin with a filled triangle. Subdivide into four smaller congruent triangles and remove the center. Repeat with each remaining triangle. The result has zero area but infinitely many holes.</p>
+          <p><span class="tag">Self-similar pieces</span> 3 copies scaled by 1/2</p>
+        </div>
+        <div class="example">
+          <h3>Mandelbrot Set</h3>
+          <p>The set of complex numbers c for which the iteration <code>z ← z² + c</code> (starting at z = 0) does not diverge. Its boundary exhibits endlessly rich, self-similar structure.</p>
+          <p><span class="tag">Complex dynamics</span> bulbs, filaments, and mini-sets</p>
+        </div>
+        <div class="example">
+          <h3>Natural Patterns</h3>
+          <p>Coastlines, ferns, Romanesco broccoli, and river networks often show fractal-like statistics. Randomized, <em>statistical</em> self-similarity appears across multiple scales.</p>
+          <p><span class="tag">Nature</span> approximate, not exact, fractals</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="conclusion">
+      <h2>Fazit</h2>
+      <p>Fractals reveal how complexity can emerge from simple rules. Whether in pure mathematics or in models of nature, they help us describe roughness, branching, and growth across scales. Exploring fractals is an invitation to look closer — and then closer again.</p>
+      <p>Want to go further? Search for interactive fractal viewers or try coding your own iterative system such as the Mandelbrot set or an L-system plant.</p>
+    </section>
+
+    <div class="bar"></div>
+  </div>
+
+  <footer>
+    Copyright (c) 2026 ilmartens10-gif
+  </footer>
+</body>
+</html>
+
