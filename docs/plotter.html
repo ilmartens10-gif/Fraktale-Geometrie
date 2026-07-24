@@ -6,18 +6,19 @@
 <title>Fraktal-Plotter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0b0d10;
-  --panel:#14171c;
-  --panel-2:#1b1f26;
-  --line:#262b33;
-  --text:#e7e9ec;
-  --text-dim:#818894;
-  --amber:#ffab4a;
-  --cyan:#59e8d4;
-  --danger:#ff6b6b;
+  --bg:#000000;
+  --panel:#1c1c1e;
+  --panel-2:#2c2c2e;
+  --line:rgba(255,255,255,.12);
+  --text:#f5f5f7;
+  --text-dim:#86868b;
+  --amber:#0A84FF;
+  --cyan:#64D2FF;
+  --purple:#BF5AF2;
+  --danger:#FF453A;
 }
 *{box-sizing:border-box;}
 html,body{height:100%;}
@@ -29,51 +30,78 @@ body{
   overflow:hidden;
 }
 #app{ display:flex; flex-direction:column; height:100vh; }
-header{
-  display:flex; align-items:center; gap:16px;
-  padding:10px 16px;
+
+/* ─── Shared site header (identisch auf allen Seiten) ─── */
+.site-header{
+  position:relative; z-index:30;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:10px 20px; flex-shrink:0;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
   border-bottom:1px solid var(--line);
-  background:var(--panel);
-  flex-shrink:0;
+  font-family:'Inter', -apple-system, sans-serif;
 }
-header h1{
-  font-size:15px; font-weight:600; letter-spacing:.04em; margin:0;
-  text-transform:uppercase; color:var(--text);
-  font-family:'IBM Plex Mono',monospace;
-  white-space:nowrap;
+.brand{ display:flex; align-items:center; gap:9px; text-decoration:none; color:#fff; min-width:0; }
+.brand-mark{
+  width:26px; height:26px; border-radius:7px; flex-shrink:0;
+  display:grid; place-items:center;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  box-shadow:0 0 10px rgba(100,210,255,.3);
 }
-header h1 span{ color:var(--amber); }
-header h1 a{ color:inherit; text-decoration:none; }
-.tabs{ display:flex; gap:4px; margin-left:auto; }
-.tab-btn{
-  font-family:'IBM Plex Mono',monospace;
-  font-size:11px; letter-spacing:.03em;
-  background:transparent; color:var(--text-dim);
-  border:1px solid var(--line); border-radius:3px;
-  padding:6px 12px; cursor:pointer;
+.brand-mark svg{ width:13px; height:13px; fill:#fff; }
+.brand-name{ font-size:14px; font-weight:700; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.site-nav{ display:flex; align-items:center; gap:2px; flex-shrink:0; }
+.site-nav-link{
+  padding:6px 12px; border-radius:980px;
+  font-size:12.5px; font-weight:500;
+  color:var(--text-dim); text-decoration:none; white-space:nowrap;
+  transition:background .15s,color .15s;
 }
-.tab-btn.active{ color:var(--bg); background:var(--amber); border-color:var(--amber); }
+.site-nav-link:hover{ color:#fff; background:rgba(255,255,255,.08); }
+.site-nav-link.active{ color:#fff; background:rgba(255,255,255,.12); border:1px solid var(--line); }
+@media (max-width:560px){
+  .brand-name{ display:none; }
+  .site-nav-link{ padding:6px 9px; font-size:11.5px; }
+}
+
+.header-right{ display:flex; align-items:center; gap:10px; }
 .panel-toggle{
   display:inline-flex; align-items:center; justify-content:center;
-  width:32px; height:32px; margin-left:8px; flex-shrink:0;
-  background:var(--panel-2); border:1px solid var(--line); border-radius:3px;
-  color:var(--text); cursor:pointer; font-size:15px;
+  width:30px; height:30px; flex-shrink:0;
+  background:rgba(255,255,255,.08); border:1px solid var(--line); border-radius:7px;
+  color:#fff; cursor:pointer; font-size:14px;
 }
 main{ flex:1; display:flex; min-height:0; position:relative; }
-#canvas-wrap{ position:relative; flex:1; min-width:0; }
-canvas{ display:block; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+#canvas-wrap{ position:relative; flex:1; min-width:0; overflow:hidden; }
+canvas{ display:block; width:100%; height:100%; cursor:crosshair; touch-action:none; transform-origin:0 0; }
 #progress-bar{
-  position:absolute; top:0; left:0; height:2px; background:var(--amber);
-  width:0%; z-index:5;
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:10px;
+  padding:7px 16px;
+  background:rgba(20,23,28,.82);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line); border-radius:980px;
+  font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-dim);
+  z-index:6; opacity:0; pointer-events:none;
+  transition:opacity .2s ease;
 }
+#progress-bar.visible{ opacity:1; }
+#progress-bar .track{ width:120px; height:4px; border-radius:2px; background:var(--line); overflow:hidden; }
+#progress-bar .fill{
+  height:100%; width:0%; border-radius:2px;
+  background:linear-gradient(90deg,var(--cyan),var(--amber));
+  transition:width .08s linear;
+}
+#progress-bar .pct{ min-width:32px; color:var(--text); }
 #hud{
   position:absolute; left:12px; bottom:12px;
   font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-dim);
-  background:rgba(11,13,16,.72); border:1px solid var(--line); border-radius:3px;
+  background:rgba(28,28,30,.72); border:1px solid var(--line); border-radius:3px;
   padding:7px 10px; line-height:1.6; pointer-events:none;
 }
 #hud b{ color:var(--cyan); font-weight:500; }
 aside#panel{
+  position:relative; z-index:20;
   width:0; flex-shrink:0; background:var(--panel);
   border-left:none; overflow:hidden;
   padding:0; display:flex; flex-direction:column; gap:14px;
@@ -89,6 +117,21 @@ aside#panel{
   width:30px; height:30px; border-radius:3px; cursor:pointer; font-size:14px;
   display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
+.mode-switch{
+  display:flex; gap:3px; background:var(--panel-2);
+  border:1px solid var(--line); border-radius:9px; padding:3px;
+}
+.tab-btn{
+  flex:1; text-align:center;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px; letter-spacing:.02em; line-height:1.3;
+  background:transparent; color:var(--text-dim);
+  border:none; border-radius:6px;
+  padding:8px 6px; cursor:pointer;
+  transition:background .15s ease,color .15s ease;
+}
+.tab-btn:hover{ color:var(--text); }
+.tab-btn.active{ color:var(--bg); background:var(--amber); font-weight:600; }
 .field{ display:flex; flex-direction:column; gap:5px; }
 .field label{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; }
 .field .row{ display:flex; gap:8px; }
@@ -131,25 +174,35 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
     transform:translateX(0);
   }
   .panel-head{ display:flex; margin-bottom:2px; }
-  header h1{ font-size:13px; }
-  .tabs{ margin-left:auto; }
-  .tab-btn{ padding:6px 8px; font-size:10px; }
 }
 </style>
 </head>
 <body>
 <div id="app">
-  <header>
-    <h1><a href="https://ilmartens10-gif.github.io/Fraktale-Geometrie/">Fraktal<span>·</span>Plotter</a></h1>
-    <div class="tabs">
-      <button class="tab-btn active" data-mode="escape" type="button">Formel-Fraktale</button>
-      <button class="tab-btn" data-mode="geo" type="button">Geometrische Fraktale</button>
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 16 16" fill-rule="evenodd"><path d="M8 2 L14 13.5 L2 13.5 Z M5 7.75 L11 7.75 L8 13.5 Z"/></svg>
+      </span>
+      <span class="brand-name">Fraktale Geometrie</span>
+    </a>
+    <div class="header-right">
+      <nav class="site-nav">
+        <a href="index.html" class="site-nav-link">Start</a>
+        <a href="plotter.html" class="site-nav-link active">Plotter</a>
+        <a href="about.html" class="site-nav-link">Über Fraktale</a>
+        <a href="https://github.com/ilmartens10-gif/Fraktale-Geometrie" target="_blank" rel="noreferrer noopener" class="site-nav-link">GitHub</a>
+      </nav>
+      <button class="panel-toggle" id="panelToggle" type="button">☰</button>
     </div>
-    <button class="panel-toggle" id="panelToggle" type="button">☰</button>
   </header>
   <main>
     <div id="canvas-wrap">
-      <div id="progress-bar"></div>
+      <div id="progress-bar">
+        <span id="progressLabel">Rendern</span>
+        <span class="track"><span class="fill" id="progressFill"></span></span>
+        <span class="pct" id="progressPct">0%</span>
+      </div>
       <canvas id="canvas"></canvas>
       <div id="hud"></div>
     </div>
@@ -157,6 +210,10 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       <div class="panel-head">
         <span class="panel-head-title">Einstellungen</span>
         <button class="panel-close" id="panelClose" type="button" aria-label="Menü schließen">✕</button>
+      </div>
+      <div class="mode-switch">
+        <button class="tab-btn active" data-mode="escape" type="button">Formel-Fraktale</button>
+        <button class="tab-btn" data-mode="geo" type="button">Geometrische Fraktale</button>
       </div>
       <button class="btn secondary" id="downloadBtn" type="button">⬇ Bild herunterladen (.png)</button>
       <div id="escapeControls">
@@ -210,9 +267,9 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
         </div>
         <div class="field" id="customPaletteFields" hidden>
           <div class="row">
-            <div class="field"><label>Außen</label><input type="color" id="colorOuter" value="#0b0d10"></div>
+            <div class="field"><label>Außen</label><input type="color" id="colorOuter" value="#000000"></div>
             <div class="field"><label>Innen</label><input type="color" id="colorInner" value="#000000"></div>
-            <div class="field"><label>Rahmen</label><input type="color" id="colorRim" value="#ffab4a"></div>
+            <div class="field"><label>Rahmen</label><input type="color" id="colorRim" value="#0A84FF"></div>
           </div>
         </div>
 
@@ -336,6 +393,12 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
   var ctx = canvas.getContext('2d');
   var hud = document.getElementById('hud');
   var progressBar = document.getElementById('progress-bar');
+  var progressFill = document.getElementById('progressFill');
+  var progressPct = document.getElementById('progressPct');
+  var progressLabel = document.getElementById('progressLabel');
+  function showProgress(label){ progressLabel.textContent = label; progressBar.classList.add('visible'); }
+  function setProgress(pct){ progressFill.style.width = pct+'%'; progressPct.textContent = pct+'%'; }
+  function hideProgress(){ progressBar.classList.remove('visible'); }
   var escapeControls = document.getElementById('escapeControls');
   var geoControls = document.getElementById('geoControls');
 
@@ -377,6 +440,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
   // ---------- State ----------
   var currentMode = 'escape';
   var escapeView = {xmin:-2, xmax:1, ymin:-1.3, ymax:1.3};
+  var displayedView = null; // Welt-Ausschnitt, der aktuell im Canvas-Bitmap steht
   var escapeRenderToken = 0;
   var escapeRenderQueued = false;
   var lastHudLines = [];
@@ -466,7 +530,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       lines.push('Segmente: ' + geoSegments.length);
       lines.push('Zoom: ' + geoView.scale.toFixed(2) + '\u00D7');
       lines.push('Gezeichnet: ' + pct + '%');
-      progressBar.style.width = pct+'%';
+      setProgress(pct);
     }
     lastHudLines = lines;
     hud.innerHTML = lines.map(function(l,i){ return i===0 ? '<b>'+l+'</b>' : l; }).join('<br>');
@@ -495,8 +559,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
     }
   }
 
-  function renderEscape(progressive){
-    if (progressive === undefined) progressive = true;
+  function renderEscape(){
     geoRenderToken++; // laufendes geometrisches Fraktal-Rendering abbrechen
     var token = ++escapeRenderToken;
     var w = canvas.width, h = canvas.height;
@@ -519,6 +582,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       };
     }
     updateHud();
+    showProgress('Rendern');
     var row=0, col=0;
 
     function step(){
@@ -547,8 +611,15 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
         col++;
         if (col>=w){ col=0; row++; if(row>=h) break; }
       }
-      if (progressive || row>=h){ ctx.putImageData(img,0,0); }
+      setProgress(Math.round(100*row/h));
       if (row<h){ requestAnimationFrame(step); }
+      else if (token === escapeRenderToken){
+        ctx.putImageData(img,0,0);
+        displayedView = {xmin:xmin,xmax:xmax,ymin:ymin,ymax:ymax};
+        canvas.style.transform = '';
+        setProgress(100);
+        hideProgress();
+      }
     }
     requestAnimationFrame(step);
   }
@@ -556,7 +627,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
   function queueEscapeRender(){
     if (escapeRenderQueued) return;
     escapeRenderQueued = true;
-    requestAnimationFrame(function(){ escapeRenderQueued=false; renderEscape(false); });
+    requestAnimationFrame(function(){ escapeRenderQueued=false; renderEscape(); });
   }
 
   function screenToEscape(px,py){
@@ -565,6 +636,22 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       escapeView.ymin + (escapeView.ymax-escapeView.ymin)*(py/canvas.height)
     ];
   }
+  // Streckt das noch angezeigte (alte) Bitmap sofort per CSS auf den neuen
+  // Kartenausschnitt – eine grobe, leicht verpixelte Vorschau, bis die
+  // echte Neuberechnung fertig ist und das scharfe Bild einsetzt.
+  function updateZoomPreview(){
+    if (!displayedView) return;
+    var W = canvas.clientWidth, H = canvas.clientHeight;
+    if (!W || !H) return;
+    var dw = displayedView.xmax-displayedView.xmin, dh = displayedView.ymax-displayedView.ymin;
+    var fxmin = (escapeView.xmin-displayedView.xmin)/dw;
+    var fxmax = (escapeView.xmax-displayedView.xmin)/dw;
+    var fymin = (escapeView.ymin-displayedView.ymin)/dh;
+    var fymax = (escapeView.ymax-displayedView.ymin)/dh;
+    var sx = 1/(fxmax-fxmin), sy = 1/(fymax-fymin);
+    var tx = -fxmin*W, ty = -fymin*H;
+    canvas.style.transform = 'scale('+sx+','+sy+') translate('+tx+'px,'+ty+'px)';
+  }
   function zoomEscapeAt(px,py,factor){
     var wxy = screenToEscape(px,py);
     var wx=wxy[0], wy=wxy[1];
@@ -572,6 +659,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
     var nh = (escapeView.ymax-escapeView.ymin)*factor;
     var fx = px/canvas.width, fy = py/canvas.height;
     escapeView = {xmin:wx-nw*fx, xmax:wx+nw*(1-fx), ymin:wy-nh*fy, ymax:wy+nh*(1-fy)};
+    updateZoomPreview();
   }
   function panEscape(dxPix,dyPix){
     var wpp = (escapeView.xmax-escapeView.xmin)/canvas.width;
@@ -580,6 +668,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       xmin: escapeView.xmin - dxPix*wpp, xmax: escapeView.xmax - dxPix*wpp,
       ymin: escapeView.ymin - dyPix*hpp, ymax: escapeView.ymax - dyPix*hpp
     };
+    updateZoomPreview();
   }
 
   // ---------- Geometric / L-System ----------
@@ -630,7 +719,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
 
   function drawGeoSegments(from,to){
     if (to<=from) return;
-    ctx.strokeStyle = '#ffab4a';
+    ctx.strokeStyle = '#0A84FF';
     ctx.lineWidth = Math.max(0.8, 1.4*Math.min(2,geoView.scale));
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -700,6 +789,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
     var total = geoSegments.length;
     var speed = parseInt(geoSpeedInput.value,10);
     var perFrame = Math.max(1, Math.round(Math.pow(speed/100,1.8) * total/8) || 1);
+    showProgress('Zeichnen');
     function step(){
       if (token !== geoRenderToken) return;
       var from = geoRevealCount;
@@ -707,6 +797,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       drawGeoSegments(from, geoRevealCount);
       updateHud();
       if (geoRevealCount<total){ requestAnimationFrame(step); }
+      else { hideProgress(); }
     }
     requestAnimationFrame(step);
   }
@@ -756,20 +847,20 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
     var boxH = lastHudLines.length*lineH + lineH*0.9 + pad*1.6;
     var boxX = 12*dpr, boxY = exportCanvas.height - boxH - 12*dpr;
 
-    ectx.fillStyle = 'rgba(11,13,16,0.78)';
+    ectx.fillStyle = 'rgba(28,28,30,0.8)';
     ectx.fillRect(boxX, boxY, boxW, boxH);
-    ectx.strokeStyle = 'rgba(38,43,51,0.9)';
+    ectx.strokeStyle = 'rgba(255,255,255,0.18)';
     ectx.lineWidth = Math.max(1,dpr);
     ectx.strokeRect(boxX, boxY, boxW, boxH);
 
     ectx.font = fontMain;
-    ectx.fillStyle = '#e7e9ec';
+    ectx.fillStyle = '#f5f5f7';
     ectx.textBaseline = 'alphabetic';
     lastHudLines.forEach(function(l,i){
       ectx.fillText(l, boxX+pad, boxY+pad*0.9 + (i+1)*lineH - lineH*0.3);
     });
     ectx.font = fontUrl;
-    ectx.fillStyle = '#818894';
+    ectx.fillStyle = '#86868b';
     ectx.fillText(urlText, boxX+pad, boxY+boxH-pad*0.6);
 
     var ts = new Date().toISOString().replace(/[:.]/g,'-');
@@ -821,6 +912,7 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
 
   // ---------- Resize ----------
   function handleResize(){
+    canvas.style.transform = '';
     sizeCanvas();
     if (currentMode==='escape'){
       escapeView = fitAspect(escapeView);
@@ -908,11 +1000,12 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
       currentMode = btn.dataset.mode;
       escapeControls.hidden = currentMode!=='escape';
       geoControls.hidden = currentMode!=='geo';
-      progressBar.style.display = currentMode==='geo' ? '' : 'none';
+      hideProgress();
       // Laufendes Zeichnen des jeweils anderen Modus abbrechen, damit es nicht
       // im Hintergrund weiterläuft und über das neu gezeichnete Fraktal malt.
       if (currentMode==='geo'){ escapeRenderToken++; } else { geoRenderToken++; }
       ctx.clearRect(0,0,canvas.width,canvas.height);
+      canvas.style.transform = '';
       if (currentMode==='escape'){ renderEscape(); }
       else { if (geoSegments.length===0){ regenerateGeo(); } else { redrawGeoNow(); } }
       updateHud();
@@ -987,7 +1080,6 @@ input[type=color]{ padding:2px; height:34px; cursor:pointer; background:var(--pa
   });
 
   // ---------- Init ----------
-  progressBar.style.display = 'none';
   applyPanelState();
   geoPresetEl.dispatchEvent(new Event('change'));
   sizeCanvas();
